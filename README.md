@@ -2,18 +2,19 @@
 
 This tutorial will help you walk through various aspects of setting up and use a basic ProxySQL installation. Enjoy!
 
-   * [ProxySQL - 101 Tutorial](#proxysql---101-tutorial)
+ * [ProxySQL - 101 Tutorial](#proxysql---101-tutorial)
       * [What is ProxySQL](#what-is-proxysql)
       * [What is NOT ProxySQL](#what-is-not-proxysql)
       * [Creating the tutorial environment](#creating-the-tutorial-environment)
          * [Install VirtualBox.](#install-virtualbox)
          * [Install Vagrant.](#install-vagrant)
          * [Install Vagrant plugin hostmanager](#install-vagrant-plugin-hostmanager)
-         * [Clone the repo](#clone-the-repo)
          * [Create the environment](#create-the-environment)
+         * [Clone the repo](#clone-the-repo)
+         * [Start the build](#start-the-build)
       * [Install ProxySQL from the Percona repo](#install-proxysql-from-the-percona-repo)
-      * [Configure the Master/Slaves](#configure-the-masterslaves)
       * [Accessing the ProxySQL admin](#accessing-the-proxysql-admin)
+      * [Configure the Master/Slaves](#configure-the-masterslaves)
       * [Configuring ProxySQL](#configuring-proxysql)
          * [Setting the Monit user](#setting-the-monit-user)
          * [Setting the backend MySQL user](#setting-the-backend-mysql-user)
@@ -27,7 +28,15 @@ This tutorial will help you walk through various aspects of setting up and use a
 
 ## What is ProxySQL
 
-Is a query routing tool. It will add logic to the traffic distribution (in a very powerful way!)
+ProxySQL is a lot of things, but what is worth for the current tutorial: Is a database traffic manager that acts as a query routing tool. It will add logic to the traffic distribution (in a very powerful way!) allowing us immediately  use the Read/Write Split features.
+
+By just using it, you will also add a proxy later to shield the database, adds High-Availability to database topology and other fetaures available and waiting to be used, which are out of the scope of this tutorial, but  worth to be mentioned: 
+
+- Query caching, Query rewrite, Query blocking
+- Connection pooling and Multiplexing
+- Read/Write Split, Read/Write Sharding
+- Load balancing, Cluster Aware, Seamless failover
+- Query mirroring, Query Throtttling, Query Timeout
 
 ## What is NOT ProxySQL
 
@@ -35,7 +44,9 @@ A failover tool. Is not a replacement of MHA/Orchestator/etc… You'd still need
 
 ## Creating the tutorial environment
 
-This tutorial uses Virtualbox and Vagrant. Follow this steps to get a setup:
+This tutorial uses Virtualbox and Vagrant. Is assumed that you are familiar with this tools (explanation of them is out of scope)
+
+Follow this steps to get a setup:
 
 ### Install VirtualBox. 
 
@@ -55,15 +66,19 @@ To install it, just run:
 vagrant plugin install vagrant-hostmanager
 ```
 
-Create the environment
+### Create the environment
 
 For this tutorial, the env consist of an "App" node (where ProxySQL will run) and 3 MySQLs, which will become 1 Master and 2 Slaves.
 
+![proxysql-master-slaves](https://raw.githubusercontent.com/nethalo/proxysql-basics-master-slave/master/proxysql-master-slaves.png)
+
 ### Clone the repo
 
+```bash
 git clone https://github.com/nethalo/proxysql-basics-master-slave.git
+```
 
-### Create the environment
+### Start the build
 
 Run 
 
@@ -77,26 +92,12 @@ Continue when the environment is done.
 
 ## Install ProxySQL from the Percona repo
 
+In the App VM (vagrant ssh app), run the following commands:
+
 ```bash
 sudo yum install -y http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
 sudo yum install -y proxysql.x86_64 Percona-Server-client-56.x86_64
-service proxysql start 
-```
-
-## Configure the Master/Slaves
-
-On **mysql1**:
-
-```mysql
-grant replication slave, replication client on *.* to repl@'192.168.70.%' identified by 'repl';
-```
-
-On **mysql2** and **mysql3**:
-
-NOTE: Please make sure the server_id is different on each server. The provision playbooks is not working well for the moment :) Fix coming soon.
-
-```Mysql
-change master to master_host = 'mysql1', master_user = 'repl', master_password='repl', master_log_file = 'mysql-bin.000001', master_log_pos = 330; start slave;
+sudo service proxysql start 
 ```
 
 ## Accessing the ProxySQL admin
@@ -123,6 +124,22 @@ Admin> show databases;
 ```
 
 Let's configure everything for the Master/Slave topology
+
+## Configure the Master/Slaves
+
+On **mysql1**:
+
+```mysql
+grant replication slave, replication client on *.* to repl@'192.168.70.%' identified by 'repl';
+```
+
+On **mysql2** and **mysql3**:
+
+NOTE: Please make sure the server_id is different on each server. The provision playbooks is not working well for the moment :) Fix coming soon.
+
+```Mysql
+change master to master_host = 'mysql1', master_user = 'repl', master_password='repl', master_log_file = 'mysql-bin.000001', master_log_pos = 330; start slave;
+```
 
 ## Configuring ProxySQL
 
@@ -194,7 +211,7 @@ Now the config is actually on runtime.
 
 ### Setting the servers
 
-Server info is stored in the **mysql_servers** table. The most basi amount of info required to insert is the info that describes:
+Server info is stored in the **mysql_servers** table. The most basic amount of info required to insert is the info that describes:
 
 - The server hostname
 - The MySQL port
