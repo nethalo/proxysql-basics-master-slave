@@ -1,0 +1,49 @@
+---
+- hosts: all
+  become: True
+  tasks:
+     - name: Install Percona Repo
+       yum:
+          name: http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
+          state: present
+
+     - name: Install Percona Server
+       yum:
+          name: Percona-Server-server-56.x86_64
+          state: present
+       notify:
+          - start mysql
+
+     - name: Enable binlogs
+       ini_file:
+          path: /etc/my.cnf
+          section: mysqld
+          option: log_bin
+          value: mysql-bin
+       notify:
+          - start mysql
+
+     - name: Change server_id
+       ini_file:
+         path: /etc/my.cnf
+         section: mysqld
+         option: server_id
+         value: "{{ ['10','20','30']|random }}"
+       notify:
+          - start mysql
+
+     - name: Change binlog format
+       ini_file:
+         path: /etc/my.cnf
+         section: mysqld
+         option: binlog_format
+         value: row
+       notify:
+          - start mysql
+
+  handlers:
+     - name: start mysql
+       service:
+             name: mysql
+             state: restarted
+             enabled: yes
