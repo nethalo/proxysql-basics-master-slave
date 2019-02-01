@@ -95,7 +95,7 @@ Continue when the environment is done.
 In the App VM (vagrant ssh app), run the following commands:
 
 ```bash
-sudo yum install -y http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
+sudo yum install -y https://repo.percona.com/yum/percona-release-latest.noarch.rpm
 sudo yum install -y proxysql.x86_64 Percona-Server-client-56.x86_64
 sudo service proxysql start 
 ```
