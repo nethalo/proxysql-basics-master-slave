@@ -4,15 +4,13 @@
   tasks:
      - name: Install Percona Repo
        yum:
-          name: http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
+          name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
           state: present
 
      - name: Install Percona Server
        yum:
-          name: Percona-Server-server-56.x86_64
+          name: [ Percona-Server-server-57.x86_64, vim ]
           state: present
-       notify:
-          - start mysql
 
      - name: Enable binlogs
        ini_file:
@@ -20,8 +18,6 @@
           section: mysqld
           option: log_bin
           value: mysql-bin
-       notify:
-          - start mysql
 
      - name: Change server_id
        ini_file:
@@ -29,8 +25,6 @@
          section: mysqld
          option: server_id
          value: "{{ ['10','20','30']|random }}"
-       notify:
-          - start mysql
 
      - name: Change binlog format
        ini_file:
@@ -38,12 +32,38 @@
          section: mysqld
          option: binlog_format
          value: row
-       notify:
-          - start mysql
 
-  handlers:
      - name: start mysql
        service:
-             name: mysql
-             state: restarted
-             enabled: yes
+           name: mysql
+           state: restarted
+           enabled: yes
+
+     - name: Wait for MySQL
+       pause:
+           seconds=20
+
+     - name: Change mysql root password and keep track in
+       shell: |
+           password_match=`awk '/A temporary password is generated for/ {a=$0} END{ print a }' /var/log/mysqld.log | awk '{print $(NF)}'`
+           echo $password_match
+           mysql -uroot -p$password_match --connect-expired-password -e "SET SESSION sql_log_bin=0; SET GLOBAL validate_password_policy = 0; SET GLOBAL validate_password_length = 6; SET GLOBAL validate_password_number_count = 0; ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'cocacola'; flush privileges; "
+           sudo echo -e "[client]\nuser=root\npassword=cocacola" > /root/.my.cnf
+       args:
+         creates: /root/.my.cnf
+       register: change_temp_pass
+
+     - meta: flush_handlers
+     - debug:
+         var: change_temp_pass
+
+     - name: Disable SELinux
+       shell: |
+            sudo setenforce 0
+
+#  handlers:
+#     - name: start mysql
+#       service:
+#             name: mysql
+#             state: restarted
+#             enabled: yes
