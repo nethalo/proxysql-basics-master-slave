@@ -70,6 +70,10 @@
        shell: |
             sudo setenforce 0
 
+     - name: Disable firewall
+       service:
+         name: firewalld
+         state: stopped
 #  handlers:
 #     - name: start mysql
 #       service:
