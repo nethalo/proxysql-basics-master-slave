@@ -121,7 +121,9 @@ Let's configure everything for the Primary/Replica topology
 On **mysql1**:
 
 ```mysql
-grant replication slave, replication client on *.* to repl@'192.168.70.%' identified by 'repl';
+CREATE USER repl@'192.168.70.%' IDENTIFIED BY 'Replica+1';
+GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO repl@'192.168.70.%';
+FLUSH PRIVILEGES;
 ```
 
 On **mysql2** and **mysql3**:
@@ -129,7 +131,7 @@ On **mysql2** and **mysql3**:
 NOTE: Please make sure the server_id is different on each server. The provision playbooks is not working well for the moment :) Fix coming soon.
 
 ```Mysql
-change master to master_host = 'mysql1', master_user = 'repl', master_password='repl', master_log_file = 'mysql-bin.000001', master_log_pos = 330; start slave;
+CHANGE MASTER TO master_host = 'mysql1', master_user = 'repl', master_password='Replica+1', master_log_file = 'mysql-bin.000002', master_log_pos = 4; START REPLICA;
 ```
 
 ## Configuring ProxySQL
