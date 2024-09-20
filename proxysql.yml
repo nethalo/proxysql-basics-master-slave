@@ -1,0 +1,33 @@
+---
+- hosts: all
+  become: True
+  tasks:
+     - name: install percona key
+       rpm_key:
+         key: https://downloads.percona.com/downloads/RPM-GPG-KEY-percona
+         state: present
+
+     - name: Install Percona Repo
+       yum:
+          name: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+          state: present
+          disable_gpg_check: yes
+
+     - name: Enable Repo
+       shell: "/usr/bin/percona-release setup pxc-80"
+
+     - name: Install Perl-DBI
+       yum:
+          name: https://dl.rockylinux.org/pub/rocky/9/AppStream/x86_64/os/Packages/p/perl-DBI-1.643-9.el9.x86_64.rpm
+          state: present
+          disable_gpg_check: yes
+
+     - name: Install ProxySQL 2
+       yum:
+          name: [ proxysql2, percona-xtradb-cluster-client.x86_64 ]
+          state: present
+
+     - name: Start ProxySQL
+       systemd_service:
+         state: started
+         name: proxysql
