@@ -70,7 +70,7 @@ vagrant plugin install vagrant-hostmanager; vagrant plugin install vagrant-vbgue
 
 For this tutorial, the env consist of an "App" node (where ProxySQL will run) and 3 MySQLs, which will become 1 Primary and 2 Replicas.
 
-![proxysql-master-slaves](https://raw.githubusercontent.com/nethalo/proxysql-basics-master-slave/master/proxysql-master-slaves.png)
+![proxysql-Primary-slaves](https://raw.githubusercontent.com/nethalo/proxysql-basics-master-slave/master/proxysql-master-slaves.png)
 
 ### Clone the repo
 
@@ -114,7 +114,7 @@ Admin> show databases;
 4 rows in set (0.00 sec)
 ```
 
-Let's configure everything for the Master/Slave topology
+Let's configure everything for the Primary/Replica topology
 
 ## Configure the Primary/Replicas
 
@@ -138,7 +138,7 @@ We need to make sure that ProxySQL is aware of this things:
 
 - The MySQL servers
 - The user that can connect to the servers (both the monit one and the "queries" one)
-- Who is the Master and who is/are the slave(s)
+- Who is the Primary and who is/are the slave(s)
 
 Let's start with the users
 
@@ -146,7 +146,7 @@ Let's start with the users
 
 ProxySQL perform the monitoring checks using this user. This is needed for things like checking the value of the read_only variable.
 
-This user requires the REPLICATION CLIENT grant for now. Just create it on the master and let the replication do the rest:
+This user requires the REPLICATION CLIENT grant for now. Just create it on the Primary and let the replication do the rest:
 
 ```mysql
 GRANT REPLICATION CLIENT ON *.* TO repl@'app' IDENTIFIED BY 'repl';
@@ -179,7 +179,7 @@ Now the change is really done.
 
 ProxySQL needs the username and the password of the user that can connect to the backend servers (the MySQL dbs). We need to provide that, but before we need to create the user in the dbs. 
 
-In the Master, create the user:
+In the Primary, create the user:
 
 ```Mysql
 GRANT ALL PRIVILEGES ON *.* TO proxysql@'%' IDENTIFIED BY 'proxysql';
@@ -212,11 +212,11 @@ Server info is stored in the **mysql_servers** table. The most basic amount of i
 
 You can add a server to all the hostgroups that you want. This will help on the query routing (eventually the hostgroup is the destination of the query rlues) and to have a controlled load distribution, among other things.
 
-However, ProxySQL in an effort to simplify things have the special "replication hostgroup" type which is nothing that a way to say which hostgroup holds the master and which one holds the slaves. 
+However, ProxySQL in an effort to simplify things have the special "replication hostgroup" type which is nothing that a way to say which hostgroup holds the Primary and which one holds the Replicas. 
 
 How is this different to a regular hostgroup? Simply: The task of moving servers between hostgroups becomes an automatic operation and depends on only one thing: the value of the **read_only** variable. 
 
-If a server has "read_only = 1" it will be part of the reader_hostgroup. Otherwise, is the master and is part of the writer_hostgroup. This means that you need to be extra careful with this variable. A good practice will be to enforce read_only = 1 on the my.cnf file and just change it on the fly in the Master. 
+If a server has "read_only = 1" it will be part of the reader_hostgroup. Otherwise, is the Primary and is part of the writer_hostgroup. This means that you need to be extra careful with this variable. A good practice will be to enforce read_only = 1 on the my.cnf file and just change it on the fly in the Primary. 
 
 To define the replication hostgroup, just do a insert to the mysql_replication_hostgroups table. For this tutorial, the insert is:
 
@@ -228,7 +228,7 @@ INSERT INTO mysql_replication_hostgroups (writer_hostgroup, reader_hostgroup) VA
 
 Let's add the server, but before a note:
 
-*NOTE: If you wish that the master gets not only "write" traffic but also "read" traffic, it needs to belong to both hostgroups. A way to achieve this is by setting read_only=1 on the master before inserting it and then after the insert rollback the value to readn_only=0. Or you just could add it directly to both hostgroups.*
+*NOTE: If you wish that the Primary gets not only "write" traffic but also "read" traffic, it needs to belong to both hostgroups. A way to achieve this is by setting read_only=1 on the Primary before inserting it and then after the insert rollback the value to readn_only=0. Or you just could add it directly to both hostgroups.*
 
 Now,  the inserts:
 
@@ -272,7 +272,7 @@ Let's verify that things works as expected.
 
 ### Check the mysql_server status
 
-Verify that the master and the slaves are part of the hostgroups that they belong. For this query the runtime_mysql_servers table:
+Verify that the Primary and the Replicas are part of the hostgroups that they belong. For this query the runtime_mysql_servers table:
 
 ```mysql
 mysql> SELECT hostgroup_id,hostname,port,status FROM runtime_mysql_servers;
@@ -311,9 +311,9 @@ Warning: Using a password on the command line interface can be insecure.
 +------------+
 ```
 
-What about if we change the Primary? Let's set mysql1 as read only and make mysql3 the new master (by setting read_only = 0)
+What about if we change the Primary? Let's set mysql1 as read only and make mysql3 the new Primary (by setting read_only = 0)
 
-Verify that ProxySQL is aware of the new master and has moved it to the writer_hostgroup:
+Verify that ProxySQL is aware of the new Primary and has moved it to the writer_hostgroup:
 
 ```Mysql
 mysql> SELECT hostgroup_id,hostname,port,status FROM runtime_mysql_servers;
