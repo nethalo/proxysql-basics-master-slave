@@ -14,7 +14,7 @@ This tutorial will help you walk through various aspects of setting up and use a
          * [Start the build](#start-the-build)
       * [Install ProxySQL from the Percona repo](#install-proxysql-from-the-percona-repo)
       * [Accessing the ProxySQL admin](#accessing-the-proxysql-admin)
-      * [Configure the Master/Slaves](#configure-the-masterslaves)
+      * [Configure the Primary/Replicas](#configure-the-primaryreplicas)
       * [Configuring ProxySQL](#configuring-proxysql)
          * [Setting the Monit user](#setting-the-monit-user)
          * [Setting the backend MySQL user](#setting-the-backend-mysql-user)
@@ -40,7 +40,7 @@ By just using it, you will also add a proxy later to shield the database, adds H
 
 ## What is NOT ProxySQL
 
-A failover tool. Is not a replacement of MHA/Orchestator/etc… You'd still need to use a tool like that to perform the failovers. 
+A failover tool. Is not a replacement of MHA/Orchestrator/etc… You'd still need to use a tool like that to perform the failovers. 
 
 ## Creating the tutorial environment
 
@@ -50,11 +50,11 @@ Follow this steps to get a setup:
 
 ### Install VirtualBox. 
 
-Version 5.1.18 works. Download Virtualbox from [here](https://www.virtualbox.org/wiki/Downloads).
+Version 7.0.20 works. Download Virtualbox from [here](https://www.virtualbox.org/wiki/Downloads).
 
 ### Install Vagrant. 
 
-Version 2.0.1 works. Download Vagrant from [here](http://vagrantup.com/).
+Version 2.4.1 works. Download Vagrant from [here](http://vagrantup.com/).
 
 ### Install Vagrant plugin hostmanager
 
@@ -63,12 +63,12 @@ This plugin will take care of dealing with the /etc/hosts file so we can use hos
 To install it, just run:
 
 ```bash
-vagrant plugin install vagrant-hostmanager
+vagrant plugin install vagrant-hostmanager; vagrant plugin install vagrant-vbguest
 ```
 
 ### Create the environment
 
-For this tutorial, the env consist of an "App" node (where ProxySQL will run) and 3 MySQLs, which will become 1 Master and 2 Slaves.
+For this tutorial, the env consist of an "App" node (where ProxySQL will run) and 3 MySQLs, which will become 1 Primary and 2 Replicas.
 
 ![proxysql-master-slaves](https://raw.githubusercontent.com/nethalo/proxysql-basics-master-slave/master/proxysql-master-slaves.png)
 
@@ -83,28 +83,19 @@ git clone https://github.com/nethalo/proxysql-basics-master-slave.git
 Run 
 
 ```bash
-cd proxysql-basics-master-slave; vagrant up; vagrant hostmanager;
+cd proxysql-basics-master-slave; vagrant plugin install vagrant-hostmanager; vagrant plugin install vagrant-vbguest; vagrant up; vagrant hostmanager;
 ```
 
 The whole process takes a while the first time (around 20 minutes) so go grab some coffee and be back later.
 
 Continue when the environment is done.
 
-## Install ProxySQL from the Percona repo
-
-In the App VM (vagrant ssh app), run the following commands:
-
-```bash
-sudo yum install -y https://repo.percona.com/yum/percona-release-latest.noarch.rpm
-sudo yum install -y proxysql.x86_64 Percona-Server-client-56.x86_64
-sudo service proxysql start 
-```
-
 ## Accessing the ProxySQL admin
 
 The Admin can be accessed using the MySQL Cllient as if it was a regular MySQL installation, you just need to use the port 6032. The default credential values are admin/admin (user/pass):
 
 ```mysql
+sudo -i;
 mysql -u admin -padmin -h 127.0.0.1 -P6032 --prompt='Admin> '
 ```
 
@@ -125,7 +116,7 @@ Admin> show databases;
 
 Let's configure everything for the Master/Slave topology
 
-## Configure the Master/Slaves
+## Configure the Primary/Replicas
 
 On **mysql1**:
 
@@ -320,7 +311,7 @@ Warning: Using a password on the command line interface can be insecure.
 +------------+
 ```
 
-What about if we change the Master? Let's set mysql1 as read only and make mysql3 the new master (by setting read_only = 0)
+What about if we change the Primary? Let's set mysql1 as read only and make mysql3 the new master (by setting read_only = 0)
 
 Verify that ProxySQL is aware of the new master and has moved it to the writer_hostgroup:
 
@@ -351,11 +342,11 @@ Warning: Using a password on the command line interface can be insecure.
 
 Perfect!
 
-**Does this means that mysql3 is the really the new Master?** 
+**Does this means that mysql3 is the really the new Primary?** 
 NO!
 
 **What happened then?** 
-ProxySQL is NOT a failover tool. Like we mention at the beggining, is a routing tool. What happen is that since we are using the special Replication hostgroup feature, ProxySQL was informed that the Master changed by changing the read_onluy variable, but mysql1 was still the master and mysql2 and mysql3 were still replicating from it. 
+ProxySQL is NOT a failover tool. Like we mention at the beggining, is a routing tool. What happen is that since we are using the special Replication hostgroup feature, ProxySQL was informed that the Primary changed by changing the read_only variable, but mysql1 was still the Primary and mysql2 and mysql3 were still replicating from it. 
 
 **What if we just do "SELECT @@hostname;"? No explicitly transaction involved.**
 
