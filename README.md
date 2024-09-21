@@ -127,14 +127,16 @@ ProxySQL perform the monitoring checks using this user. This is needed for thing
 This user requires the REPLICATION CLIENT grant for now. Just create it on the Primary and let the replication do the rest:
 
 ```mysql
-GRANT REPLICATION CLIENT ON *.* TO repl@'app' IDENTIFIED BY 'repl';
+CREATE USER repl@'app' IDENTIFIED WITH mysql_native_password BY 'Replica+1';
+GRANT REPLICATION CLIENT ON *.* TO repl@'app';
+FLUSH PRIVILEGES;
 ```
 
 Now, on the admin side, update the values of the variables mysql-monitor_username and mysql-monitor_password:
 
 ```mysql
 SET mysql-monitor_username='repl';
-SET mysql-monitor_password='repl';
+SET mysql-monitor_password='Replica+1';
 ```
 
 Is this enough? 
@@ -160,13 +162,15 @@ ProxySQL needs the username and the password of the user that can connect to the
 In the Primary, create the user:
 
 ```Mysql
-GRANT ALL PRIVILEGES ON *.* TO proxysql@'%' IDENTIFIED BY 'proxysql';
+CREATE USER proxysql@'%' IDENTIFIED WITH mysql_native_password BY 'Proxysql+1';
+GRANT ALL PRIVILEGES ON *.* TO proxysql@'%';
+FLUSH PRIVILEGES;
 ```
 
 And now let ProxySQL know the data:
 
 ```MySQL
-INSERT INTO mysql_users (username,password, default_hostgroup) VALUES ('proxysql','proxysql',1);
+INSERT INTO mysql_users (username,password, default_hostgroup) VALUES ('proxysql','Proxysql+1',1);
 ```
 
 Remember to load it to Runtime. To do that, execute:
@@ -274,13 +278,13 @@ This is where we learn how ProxySQL acts as the database frontend. Is just like 
 To verify the routing, let's check for the hostname:
 
 ```mysql
-mysql -uproxysql -pproxysql -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
+mysql -uproxysql -pProxysql+1 -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
 ```
 
 As expected, it returns "mysql1":
 
 ```Mysql
-[root@app ~]# mysql -uproxysql -pproxysql -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
+[root@app ~]# mysql -uproxysql -pProxysql+1 -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
 Warning: Using a password on the command line interface can be insecure.
 +------------+
 | @@hostname |
@@ -309,7 +313,7 @@ mysql> SELECT hostgroup_id,hostname,port,status FROM runtime_mysql_servers;
 And now via query:
 
 ```mysql
-[root@app ~]# mysql -uproxysql -pproxysql -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
+[root@app ~]# mysql -uproxysql -pProxysql+1 -h 127.0.0.1 -P6033 -e "START TRANSACTION; SELECT @@hostname; ROLLBACK;"
 Warning: Using a password on the command line interface can be insecure.
 +------------+
 | @@hostname |
