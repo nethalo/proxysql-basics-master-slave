@@ -86,13 +86,25 @@ Let's configure everything for the Primary/Replica topology
 
 On **mysql1**:
 
+Connect to MySQL:
+```shell
+sudo -i;
+mysql;
+```
+And run this:
 ```mysql
-CREATE USER repl@'192.168.70.%' IDENTIFIED BY 'Replica+1';
+CREATE USER repl@'192.168.70.%' IDENTIFIED WITH mysql_native_password BY 'Replica+1';
 GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO repl@'192.168.70.%';
 FLUSH PRIVILEGES;
 ```
 
 On **mysql2** and **mysql3**:
+
+Connect to MySQL:
+```shell
+sudo -i;
+mysql;
+```
 
 ```Mysql
 CHANGE MASTER TO master_host = 'mysql1', master_user = 'repl', master_password='Replica+1', master_log_file = 'mysql-bin.000002', master_log_pos = 4; START REPLICA;
