@@ -1,5 +1,7 @@
 # ProxySQL - 101 Tutorial
 
+![a-person-looking-at-a-river](a-person-looking-to-a-river-that-is-split-in-3-str.png)
+
 This tutorial will help you walk through various aspects of setting up and use a basic ProxySQL installation. Enjoy!
 
 ## What is ProxySQL
