@@ -2,30 +2,6 @@
 
 This tutorial will help you walk through various aspects of setting up and use a basic ProxySQL installation. Enjoy!
 
- * [ProxySQL - 101 Tutorial](#proxysql---101-tutorial)
-      * [What is ProxySQL](#what-is-proxysql)
-      * [What is NOT ProxySQL](#what-is-not-proxysql)
-      * [Creating the tutorial environment](#creating-the-tutorial-environment)
-         * [Install VirtualBox.](#install-virtualbox)
-         * [Install Vagrant.](#install-vagrant)
-         * [Install Vagrant plugin hostmanager](#install-vagrant-plugin-hostmanager)
-         * [Create the environment](#create-the-environment)
-         * [Clone the repo](#clone-the-repo)
-         * [Start the build](#start-the-build)
-      * [Install ProxySQL from the Percona repo](#install-proxysql-from-the-percona-repo)
-      * [Accessing the ProxySQL admin](#accessing-the-proxysql-admin)
-      * [Configure the Primary/Replicas](#configure-the-primaryreplicas)
-      * [Configuring ProxySQL](#configuring-proxysql)
-         * [Setting the Monit user](#setting-the-monit-user)
-         * [Setting the backend MySQL user](#setting-the-backend-mysql-user)
-         * [Setting the servers](#setting-the-servers)
-            * [Replication hostgroup](#replication-hostgroup)
-         * [Adding the MySQL servers to ProxySQL](#adding-the-mysql-servers-to-proxysql)
-         * [Setting Query Rules](#setting-query-rules)
-      * [Checks](#checks)
-         * [Check the mysql_server status](#check-the-mysql_server-status)
-         * [Check that the routing works](#check-that-the-routing-works)
-
 ## What is ProxySQL
 
 ProxySQL is a lot of things, but what is worth for the current tutorial: Is a database traffic manager that acts as a query routing tool. It will add logic to the traffic distribution (in a very powerful way!) allowing us immediately  use the Read/Write Split features.
@@ -55,16 +31,6 @@ Version 7.0.20 works. Download Virtualbox from [here](https://www.virtualbox.org
 ### Install Vagrant. 
 
 Version 2.4.1 works. Download Vagrant from [here](http://vagrantup.com/).
-
-### Install Vagrant plugin hostmanager
-
-This plugin will take care of dealing with the /etc/hosts file so we can use hostnames instead of IPs. https://github.com/devopsgroup-io/vagrant-hostmanager
-
-To install it, just run:
-
-```bash
-vagrant plugin install vagrant-hostmanager; vagrant plugin install vagrant-vbguest
-```
 
 ### Create the environment
 
@@ -127,8 +93,6 @@ FLUSH PRIVILEGES;
 ```
 
 On **mysql2** and **mysql3**:
-
-NOTE: Please make sure the server_id is different on each server. The provision playbooks is not working well for the moment :) Fix coming soon.
 
 ```Mysql
 CHANGE MASTER TO master_host = 'mysql1', master_user = 'repl', master_password='Replica+1', master_log_file = 'mysql-bin.000002', master_log_pos = 4; START REPLICA;
