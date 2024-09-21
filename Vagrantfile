@@ -12,6 +12,7 @@ Vagrant.configure("2") do |config|
      app_config.vbguest.auto_update = true
      app_config.vm.hostname = "app"
      app_config.vm.network "private_network", ip: "192.168.70.200"
+     app_config.vm.network "forwarded_port", guest: 6080, host: 6080
      app_config.hostmanager.enabled = true
      app_config.hostmanager.manage_guest = true
      app_config.hostmanager.ignore_private_ip = false
