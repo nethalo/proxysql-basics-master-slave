@@ -31,3 +31,8 @@
        systemd_service:
          state: started
          name: proxysql
+
+     - name: Disable firewall
+       service:
+         name: firewalld
+         state: stopped
