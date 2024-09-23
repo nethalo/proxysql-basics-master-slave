@@ -349,3 +349,18 @@ ProxySQL is NOT a failover tool. Like we mention at the beggining, is a routing 
 **What if we just do "SELECT @@hostname;"? No explicitly transaction involved.**
 
 In this case, the hostname will be any of the read_hostgrpup members, which is all of our MySQLs. So it can be mysql1, mysql2 or mysql3. Give it a try.
+
+## Enabling the HTTP server
+
+In order to have a browser monitor, as described in https://proxysql.com/documentation/http-web-server/
+
+```mysql
+SET admin-web_enabled='true';
+LOAD ADMIN VARIABLES TO RUNTIME;
+```
+
+And then go to https://192.168.70.200:6080/ and use the default stats credentials:
+
+**user** stats
+
+**password** stats
