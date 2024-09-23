@@ -63,7 +63,7 @@ Continue when the environment is done.
 The Admin can be accessed using the MySQL Cllient as if it was a regular MySQL installation, you just need to use the port 6032. The default credential values are admin/admin (user/pass):
 
 ```mysql
-sudo -i;
+# AS ROOT: sudo -i
 mysql -u admin -padmin -h 127.0.0.1 -P6032 --prompt='Admin> '
 ```
 
@@ -90,7 +90,7 @@ On **mysql1**:
 
 Connect to MySQL:
 ```shell
-sudo -i;
+# AS ROOT: sudo -i
 mysql;
 ```
 And run this:
@@ -104,7 +104,7 @@ On **mysql2** and **mysql3**:
 
 Connect to MySQL:
 ```shell
-sudo -i;
+# AS ROOT: sudo -i
 mysql;
 ```
 
@@ -118,7 +118,7 @@ On **mysql2** and **mysql3**:
 
 Connect to MySQL:
 ```shell
-sudo -i;
+# AS ROOT: sudo -i
 mysql;
 ```
 
