@@ -112,6 +112,20 @@ mysql;
 CHANGE MASTER TO master_host = 'mysql1', master_user = 'repl', master_password='Replica+1', master_log_file = 'mysql-bin.000002', master_log_pos = 4; START REPLICA;
 ```
 
+## Set Replicas as Read-Only
+
+On **mysql2** and **mysql3**:
+
+Connect to MySQL:
+```shell
+sudo -i;
+mysql;
+```
+
+```Mysql
+SET GLOBAL read_only = 1;
+```
+
 ## Configuring ProxySQL
 
 We need to make sure that ProxySQL is aware of this things:
